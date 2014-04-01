@@ -16,6 +16,7 @@ import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.Entrypoint;
+import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.callgraph.impl.Util;
@@ -23,9 +24,9 @@ import com.ibm.wala.ipa.callgraph.propagation.PointerAnalysis;
 import com.ibm.wala.ipa.cha.ClassHierarchy;
 import com.ibm.wala.ipa.slicer.NormalStatement;
 import com.ibm.wala.ipa.slicer.Slicer;
+import com.ibm.wala.ipa.slicer.Slicer.ControlDependenceOptions;
+import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
-import com.ibm.wala.shrikeBT.IInstruction;
-import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.io.FileProvider;
@@ -35,44 +36,48 @@ import com.ibm.wala.util.strings.UTF8Convert;
 
 public class Blamer {
 
-	public static void main(String[] args) throws Exception {
-		// 1. try to build graph from source code
-		long before = System.currentTimeMillis();
+    public static void main(String[] args) throws Exception {
+        final String jars = "/home/bbusjaeger/jars";
+        final String klass = "Lcommon/util/collection/AdjacentDuplicateRemovingIteratorTest";
+        final String methodName = "test";
 
-		final String[] path = { "/Users/bbusjaeger/projects/jetty.project/jetty-util/target/dependency" };
-		final String classpath = PDFCallGraph.findJarFiles(path);
-		final File exclusions = new FileProvider()
-				.getFile(REGRESSION_EXCLUSIONS);
+        // 1. try to build graph from source code
 
-		final AnalysisScope scope = AnalysisScopeReader
-				.makeJavaBinaryAnalysisScope(classpath, exclusions);
+        final String[] path = { jars };
+        final String classpath = PDFCallGraph.findJarFiles(path);
+        final File exclusions = new FileProvider().getFile(REGRESSION_EXCLUSIONS);
 
-		final ClassHierarchy cha = ClassHierarchy.make(scope);
+        final AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classpath, exclusions);
 
-		final MethodReference method = scope.findMethod(
-				AnalysisScope.APPLICATION,
-				"Lorg/eclipse/jetty/util/ArrayQueueTest",
-				Atom.findOrCreateUnicodeAtom("testWrap"),
-				new ImmutableByteArray(UTF8Convert.toUTF8("()V")));
+        long before_cha = System.currentTimeMillis();
+        final ClassHierarchy cha = ClassHierarchy.make(scope);
+        System.err.println("Class Hierarchy: " + (System.currentTimeMillis() - before_cha));
 
-		final Entrypoint entrypoint = new DefaultEntrypoint(method, cha);
-		final AnalysisOptions options = new AnalysisOptions(scope,
-				singleton(entrypoint));
+        final MethodReference method = scope.findMethod(AnalysisScope.APPLICATION, klass,
+                Atom.findOrCreateUnicodeAtom(methodName), new ImmutableByteArray(UTF8Convert.toUTF8("()V")));
 
-		final AnalysisCache cache = new AnalysisCache();
-		final CallGraphBuilder builder = Util.makeZeroCFABuilder(options,
-				cache, cha, scope);
-		final CallGraph callGraph = builder.makeCallGraph(options, null);
-		final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
+        final Entrypoint entrypoint = new DefaultEntrypoint(method, cha);
+        final AnalysisOptions options = new AnalysisOptions(scope, singleton(entrypoint));
+        options.setReflectionOptions(ReflectionOptions.NONE);
 
-		final IMethod m = cha.resolveMethod(method);
-		CGNode node = callGraph.getNode(m, Everywhere.EVERYWHERE);
+        final AnalysisCache cache = new AnalysisCache();
+        final CallGraphBuilder builder = Util.makeZeroCFABuilder(options, cache, cha, scope);
 
-		final Statement s = new NormalStatement(node, 8);
-		final Collection<Statement> slice = Slicer.computeBackwardSlice(s,
-				callGraph, pointerAnalysis);
-		SlicerTest.dumpSlice(slice);
+        long before_cg = System.currentTimeMillis();
+        final CallGraph callGraph = builder.makeCallGraph(options, null);
+        final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
+        System.err.println("Call Graph: " + (System.currentTimeMillis() - before_cg));
 
-		System.out.println(System.currentTimeMillis() - before);
-	}
+        long before_slice = System.currentTimeMillis();
+        final IMethod m = cha.resolveMethod(method);
+        CGNode node = callGraph.getNode(m, Everywhere.EVERYWHERE);
+        final Statement s = new NormalStatement(node, 8);
+        final Collection<Statement> slice = Slicer.computeBackwardSlice(s, callGraph, pointerAnalysis,
+                DataDependenceOptions.FULL, ControlDependenceOptions.FULL);
+        System.err.println("Slice: " + (System.currentTimeMillis() - before_slice));
+
+        System.err.println("Call graph: " + callGraph);
+
+        SlicerTest.dumpSlice(slice);
+    }
 }
