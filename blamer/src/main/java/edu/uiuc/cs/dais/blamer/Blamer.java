@@ -10,15 +10,14 @@ import java.util.concurrent.Callable;
 
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.core.tests.slicer.SlicerTest;
-import com.ibm.wala.examples.drivers.PDFCallGraph;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
+import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.callgraph.CallGraph;
 import com.ibm.wala.ipa.callgraph.CallGraphBuilder;
 import com.ibm.wala.ipa.callgraph.Entrypoint;
-import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
 import com.ibm.wala.ipa.callgraph.impl.DefaultEntrypoint;
 import com.ibm.wala.ipa.callgraph.impl.Everywhere;
 import com.ibm.wala.ipa.callgraph.impl.Util;
@@ -40,16 +39,11 @@ import com.ibm.wala.util.strings.UTF8Convert;
 public class Blamer {
 
 	/**
-	 * Sample salesforce parameters:
-	 * <ol>
-	 * <li>/home/bbusjaeger/jars</li>
-	 * <li>Lcommon/util/collection/AdjacentDuplicateRemovingIteratorTest</li>
-	 * <li>test</li>
-	 * </ol>
-	 * 
 	 * Sample jetty parameters:
 	 * <ol>
-	 * <li>/Users/bbusjaeger/projects/jetty.project/jetty-util/target/dependency</li>
+	 * <li>
+	 * <code>/Users/bbusjaeger/projects/jetty.project/jetty-util:/Users/bbusjaeger/projects/jetty.project/jetty-util:/Users/bbusjaeger/.m2/repository/javax/servlet/javax.servlet-api/3.1.0/javax.servlet-api-3.1.0.jar:/Users/bbusjaeger/.m2/repository/org/eclipse/jetty/toolchain/jetty-test-helper/2.7/jetty-test-helper-2.7.jar:/Users/bbusjaeger/.m2/repository/junit/junit/4.11/junit-4.11.jar:/Users/bbusjaeger/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar:/Users/bbusjaeger/.m2/repository/org/hamcrest/hamcrest-library/1.3/hamcrest-library-1.3.jar:/Users/bbusjaeger/.m2/repository/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1.jar:/Users/bbusjaeger/.m2/repository/org/slf4j/slf4j-jdk14/1.6.1/slf4j-jdk14-1.6.1.jar</code>
+	 * </li>
 	 * <li>Lorg/eclipse/jetty/util/ArrayQueueTest</li>
 	 * <li>testWrap</li>
 	 * </ol>
@@ -63,12 +57,12 @@ public class Blamer {
 			System.exit(-1);
 		}
 
-		final String jarDir = args[0];
+		final String classpath = args[0];
 		final String className = args[1];
 		final String methodName = args[2];
 
 		// 1. create class hierarchy
-		final AnalysisScope scope = createAnalysisScope(jarDir);
+		final AnalysisScope scope = createAnalysisScope(classpath);
 		final ClassHierarchy cha = makeClassHierachy(scope).timed();
 
 		// 2. build call graph
@@ -91,12 +85,9 @@ public class Blamer {
 		return builder;
 	}
 
-	private static AnalysisScope createAnalysisScope(final String jarDir) throws WalaException, IOException {
-		final String[] path = { jarDir };
-		final String classpath = PDFCallGraph.findJarFiles(path);
+	private static AnalysisScope createAnalysisScope(final String classpath) throws WalaException, IOException {
 		final File exclusions = new FileProvider().getFile(REGRESSION_EXCLUSIONS);
-		final AnalysisScope scope = AnalysisScopeReader.makeJavaBinaryAnalysisScope(classpath, exclusions);
-		return scope;
+		return AnalysisScopeReader.makeJavaBinaryAnalysisScope(classpath, exclusions);
 	}
 
 	private static AnalysisOptions createAnalysisOptions(final String className, final String methodName,
