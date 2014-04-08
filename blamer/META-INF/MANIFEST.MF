@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Blamer
+Bundle-SymbolicName: blamer
+Bundle-Version: 1.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Require-Bundle: com.ibm.wala.core;bundle-version="1.3.4",
+ com.ibm.wala.core.testdata;bundle-version="1.3.4",
+ com.ibm.wala.core.tests;bundle-version="1.3.4",
+ org.eclipse.jdt.core;bundle-version="3.8.3",
+ org.eclipse.equinox.common;bundle-version="3.6.100"
