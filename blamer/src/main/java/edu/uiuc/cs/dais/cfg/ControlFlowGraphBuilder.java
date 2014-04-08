@@ -14,7 +14,7 @@ public class ControlFlowGraphBuilder {
 
     public void build(String[] sourceFilePaths) {
         final FileASTRequestor requestor = new ASTListener();
-//        parser.createASTs(sourceFilePaths, null, null, requestor, null);
+        parser.createASTs(sourceFilePaths, null, null, requestor, null);
     }
 
     class ASTListener extends FileASTRequestor {
