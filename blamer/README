@@ -1,55 +1,75 @@
 Steps to try out:
 
 1. Install eclipse
-  https://www.eclipse.org/
+
+https://www.eclipse.org/
+
 
 2. Clone WALA:
-  https://github.com/wala/WALA
+
+https://github.com/wala/WALA
+
 
 3. Import WALA projects into Eclipse
-  (Import > Existing Project into Workspace > point at WALA dir)
 
+Import > Existing Project into Workspace
+point at WALA clone dir
 remove the following projects (they are not needed):
-com.ibm.wala-feature
-com.ibm.wala.cast.js.test.data
-com.ibm.wala.tests-feature
-com.ibm.wala.tests.ide-feature
-com.ibm.wala.cast.java.polyglot
-com.ibm.wala.cast.java.polyglot.test
-com.ibm.wala.cast.js
-com.ibm.wala.cast.js.html.nu_validator
-com.ibm.wala.cast.js.rhino
-com.ibm.wala.cast.js.rhino.test
-com.ibm.wala.cast.js.test
-com.ibm.wala.ide.jsdt
-com.ibm.wala.ide.jsdt.tests
+  com.ibm.wala-feature
+  com.ibm.wala.cast.js.test.data
+  com.ibm.wala.tests-feature
+  com.ibm.wala.tests.ide-feature
+  com.ibm.wala.cast.java.polyglot
+  com.ibm.wala.cast.java.polyglot.test
+  com.ibm.wala.cast.js
+  com.ibm.wala.cast.js.html.nu_validator
+  com.ibm.wala.cast.js.rhino
+  com.ibm.wala.cast.js.rhino.test
+  com.ibm.wala.cast.js.test
+  com.ibm.wala.ide.jsdt
+  com.ibm.wala.ide.jsdt.tests
+
 
 4. Configure WALA
-   (details: http://wala.sourceforge.net/wiki/index.php/UserGuide:Getting_Started)
 
 copy com.ibm.wala.core/dat/wala.properties.sample to com.ibm.wala.core/dat/wala.properties
 set java_runtime_dir to point to your jre/lib directory
 
 copy com.ibm.wala.core.tests/dat/wala.examples.properties.sample to com.ibm.wala.core.tests/dat/wala.examples.properties
 
+(details: http://wala.sourceforge.net/wiki/index.php/UserGuide:Getting_Started)
+
+
 5. Clone blamer
-  https://github.com/busjaeger/blamer
+
+https://github.com/busjaeger/blamer
+
 
 5. Import blamer
-  (Import > Existing Project into Workspace)
+
+Import > Existing Project into Workspace
+Point to blamer clone directory
+
 
 6. Clone Jetty
+
 https://github.com/eclipse/jetty.project
 
-7. Build the jetty-util and copy together dependencies:
-  (make sure JAVA_HOME points to JDK7)
+
+7. Build the jetty-util project:
+
+make sure JAVA_HOME points to JDK7
 mvn -Dmaven.test.skip=true package
 
+
 8. Get full classpath
+
 mvn -Dmdep.outputFile=cp dependency:build-classpath
 echo `pwd target/test-classes/`:`pwd target/classes`:`cat cp`
 
+
 9. Launch edu.uiuc.cs.dais.blamer.Blamer with the following args:
-classpath from step 8
-Name of test class, e.g. Lorg/eclipse/jetty/util/ArrayQueueTest
-Name of test method, e.g. testWrap
+
+arg[0]=classpath from step 8
+arg[1]=Name of test class, e.g. Lorg/eclipse/jetty/util/ArrayQueueTest
+arg[2]=Name of test method, e.g. testWrap
