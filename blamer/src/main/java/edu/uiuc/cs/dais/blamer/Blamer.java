@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import com.ibm.wala.classLoader.IMethod;
-import com.ibm.wala.core.tests.slicer.SlicerTest;
+import com.ibm.wala.examples.drivers.PDFCallGraph;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions.ReflectionOptions;
@@ -28,6 +28,7 @@ import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Slicer.ControlDependenceOptions;
 import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
@@ -53,7 +54,7 @@ public class Blamer {
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length != 3) {
-			System.err.println("usage: {jar-directory} {test-class} {test-method}");
+			System.err.println("usage: {classpath} {test-class} {test-method}");
 			System.exit(-1);
 		}
 
@@ -70,19 +71,23 @@ public class Blamer {
 		final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
 		final CallGraph callGraph = makeCallGraph(builder, options).timed();
 
+		System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
+
 		// 3. compute forward slice
 		final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
 		final IMethod method = options.getEntrypoints().iterator().next().getMethod();
-		final Collection<Statement> slice = makeBackwardSlice(pointerAnalysis, callGraph, method).timed();
+		final Collection<Statement> slice = makeSlice(pointerAnalysis, callGraph, method).timed();
 
-		SlicerTest.dumpSlice(slice);
+		for (Statement s : slice)
+			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
+					.equals(ClassLoaderReference.Application))
+				System.out.println(s);
 	}
 
 	private static CallGraphBuilder createCallGraphBuilder(final AnalysisScope scope, final ClassHierarchy cha,
 			final AnalysisOptions options) {
 		final AnalysisCache cache = new AnalysisCache();
-		final CallGraphBuilder builder = Util.makeZeroCFABuilder(options, cache, cha, scope);
-		return builder;
+		return Util.makeZeroCFABuilder(options, cache, cha, scope);
 	}
 
 	private static AnalysisScope createAnalysisScope(final String classpath) throws WalaException, IOException {
@@ -118,14 +123,14 @@ public class Blamer {
 		};
 	}
 
-	static TimedCallable<Collection<Statement>> makeBackwardSlice(final PointerAnalysis pointerAnalysis,
+	static TimedCallable<Collection<Statement>> makeSlice(final PointerAnalysis pointerAnalysis,
 			final CallGraph callGraph, final IMethod method) {
 		return new TimedCallable<Collection<Statement>>("Slice") {
 			@Override
 			public Collection<Statement> call() throws Exception {
 				final CGNode node = callGraph.getNode(method, Everywhere.EVERYWHERE);
-				final Statement s = new NormalStatement(node, 10);
-				return Slicer.computeBackwardSlice(s, callGraph, pointerAnalysis, DataDependenceOptions.FULL,
+				final Statement s = new NormalStatement(node, 8);
+				return Slicer.computeBackwardSlice(s, callGraph, pointerAnalysis, DataDependenceOptions.NO_EXCEPTIONS,
 						ControlDependenceOptions.FULL);
 			}
 		};
