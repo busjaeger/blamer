@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
+import com.ibm.wala.classLoader.IBytecodeMethod;
+import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.examples.drivers.PDFCallGraph;
 import com.ibm.wala.ipa.callgraph.AnalysisCache;
@@ -28,8 +30,12 @@ import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Slicer.ControlDependenceOptions;
 import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
+import com.ibm.wala.types.TypeName;
+import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.io.FileProvider;
@@ -53,35 +59,42 @@ public class Blamer {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length != 3) {
-			System.err.println("usage: {classpath} {test-class} {test-method}");
+		if (args.length != 6) {
+			System.err
+					.println("usage: {comma-separated list of classpaths} {test-class} {test-method} {failure-class} {failure-method} {failure-line-number}");
 			System.exit(-1);
 		}
 
-		final String classpath = args[0];
-		final String className = args[1];
-		final String methodName = args[2];
+		final String[] classpaths = args[0].split(",");
+		final String testClassName = args[1];
+		final String testMethodName = args[2];
+		final String failureClassName = args[3];
+		final String failureMethodName = args[4];
+		final int failureLineNumber = Integer.parseInt(args[5]);
 
-		// 1. create class hierarchy
-		final AnalysisScope scope = createAnalysisScope(classpath);
-		final ClassHierarchy cha = makeClassHierachy(scope).timed();
+		for (String classpath : classpaths) {
+			// 1. create class hierarchy
+			final AnalysisScope scope = createAnalysisScope(classpath);
+			final ClassHierarchy cha = makeClassHierachy(scope).timed();
 
-		// 2. build call graph
-		final AnalysisOptions options = createAnalysisOptions(className, methodName, scope, cha);
-		final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
-		final CallGraph callGraph = makeCallGraph(builder, options).timed();
+			// 2. build call graph
+			final AnalysisOptions options = createAnalysisOptions(testClassName, testMethodName, scope, cha);
+			final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
+			final CallGraph callGraph = makeCallGraph(builder, options).timed();
 
-		System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
+			System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
 
-		// 3. compute forward slice
-		final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
-		final IMethod method = options.getEntrypoints().iterator().next().getMethod();
-		final Collection<Statement> slice = makeSlice(pointerAnalysis, callGraph, method).timed();
+			// 3. compute forward slice
+			final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
+			final Statement failureStatement = findStatement(scope, callGraph, failureClassName, failureMethodName,
+					failureLineNumber);
+			final Collection<Statement> slice = makeSlice(pointerAnalysis, callGraph, failureStatement).timed();
 
-		for (Statement s : slice)
-			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
-					.equals(ClassLoaderReference.Application))
-				System.out.println(s);
+			for (Statement s : slice)
+				if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
+						.equals(ClassLoaderReference.Application))
+					System.out.println(s);
+		}
 	}
 
 	private static CallGraphBuilder createCallGraphBuilder(final AnalysisScope scope, final ClassHierarchy cha,
@@ -105,6 +118,34 @@ public class Blamer {
 		return options;
 	}
 
+	private static Statement findStatement(AnalysisScope scope, CallGraph callGraph, String className,
+			String methodName, int lineNumber) {
+		TypeName typeName = TypeName.string2TypeName(className);
+		TypeReference type = TypeReference.findOrCreate(scope.getApplicationLoader(), typeName);
+		IClass cls = callGraph.getClassHierarchy().lookupClass(type);
+		Atom mn = Atom.findOrCreateUnicodeAtom(methodName);
+		IBytecodeMethod method = null;
+		for (IMethod m : cls.getAllMethods())
+			if (m.getName().equals(mn) && m instanceof IBytecodeMethod)
+				method = (IBytecodeMethod) m;
+		if (method == null)
+			return null;
+		final CGNode node = callGraph.getNode(method, Everywhere.EVERYWHERE);
+		SSAInstruction[] is = node.getIR().getInstructions();
+		for (int i = 0; i < is.length; i++) {
+			if (is[i] == null)
+				continue;
+			try {
+				if (lineNumber == method.getLineNumber(method.getBytecodeIndex(i))) {
+					return new NormalStatement(node, i);
+				}
+			} catch (InvalidClassFileException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		return null;
+	}
+
 	static TimedCallable<ClassHierarchy> makeClassHierachy(final AnalysisScope scope) {
 		return new TimedCallable<ClassHierarchy>(ClassHierarchy.class) {
 			@Override
@@ -124,13 +165,11 @@ public class Blamer {
 	}
 
 	static TimedCallable<Collection<Statement>> makeSlice(final PointerAnalysis pointerAnalysis,
-			final CallGraph callGraph, final IMethod method) {
+			final CallGraph callGraph, final Statement statement) {
 		return new TimedCallable<Collection<Statement>>("Slice") {
 			@Override
 			public Collection<Statement> call() throws Exception {
-				final CGNode node = callGraph.getNode(method, Everywhere.EVERYWHERE);
-				final Statement s = new NormalStatement(node, 8);
-				return Slicer.computeBackwardSlice(s, callGraph, pointerAnalysis, DataDependenceOptions.NO_EXCEPTIONS,
+				return Slicer.computeBackwardSlice(statement, callGraph, pointerAnalysis, DataDependenceOptions.NONE,
 						ControlDependenceOptions.FULL);
 			}
 		};
