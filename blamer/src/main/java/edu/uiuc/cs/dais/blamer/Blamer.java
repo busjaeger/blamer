@@ -10,8 +10,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
@@ -39,7 +39,6 @@ import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.SSAInstruction;
-import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
@@ -69,7 +68,7 @@ public class Blamer {
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length != 6) {
-			System.err.println("usage: {comma separated list program versions (= directories containing jars)} "
+			System.err.println("usage: {comma separated list of directories containing program versions} "
 					+ "{test-class} {test-method} {failure-class} {failure-method} {failure-line-number}");
 			System.exit(-1);
 		}
@@ -107,7 +106,7 @@ public class Blamer {
 			addChangedNodes(prevCallGraph, callGraph, i, changedNodes);
 		}
 
-//		printCallGraph(prevCallGraph);
+		// printCallGraph(prevCallGraph);
 
 		// 3. compute backward slice
 		final PointerAnalysis pointerAnalysis = prevBuilder.getPointerAnalysis();
@@ -115,28 +114,90 @@ public class Blamer {
 				failureLineNumber);
 		final Collection<Statement> slice = makeSlice(pointerAnalysis, prevCallGraph, failureStatement).timed();
 
-//		for (Statement s : slice)
-//			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
-//					.equals(ClassLoaderReference.Application))
-//				System.out.println(s);
+		// for (Statement s : slice)
+		// if
+		// (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
+		// .equals(ClassLoaderReference.Application))
+		// System.out.println(s);
 	}
 
-	private static void addChangedNodes(CallGraph oldGraph, CallGraph newGraph, int i,
-			MultiMap<String, Integer> changedNodes) {
-		Map<String, CGNode> oldNodesById = new HashMap<String, CGNode>(oldGraph.getNumberOfNodes());
-		for (CGNode node : DFS.getReachableNodes(oldGraph, oldGraph.getEntrypointNodes()))
-			oldNodesById.put(getId(node), node);
+	private static void addChangedNodes(final CallGraph oldGraph, final CallGraph newGraph, final int i,
+			final MultiMap<String, Integer> changedNodes) {
+		Map<String, CGNode> oldNodesById = idmap(DFS.getReachableNodes(oldGraph, oldGraph.getEntrypointNodes()));
+		Map<String, CGNode> newNodesById = idmap(DFS.getReachableNodes(newGraph, newGraph.getEntrypointNodes()));
 
-		for (CGNode newNode : DFS.getReachableNodes(newGraph, newGraph.getEntrypointNodes())) {
-			String id = getId(newNode);
-			CGNode oldNode = oldNodesById.get(id);
-			if (oldNode == null) {
-				System.out.println("Changelist " + i + " created node: " + newNode);
-				changedNodes.put(id, i);
-			} else {
-
+		diff(oldNodesById, newNodesById, new Differ<String, CGNode>() {
+			@Override
+			void created(String key, CGNode value) {
+				System.out.println("Changelist " + i + " created node: " + key);
+				changedNodes.put(key, i);
 			}
+
+			@Override
+			void updated(String key, final CGNode oldValue, final CGNode newValue) {
+				Map<String, CGNode> oldSucc = idmap(oldGraph.getSuccNodes(oldValue));
+				Map<String, CGNode> newSucc = idmap(newGraph.getSuccNodes(newValue));
+				final boolean[] changed = new boolean[1];
+				diff(oldSucc, newSucc, new Differ<String, CGNode>() {
+					@Override
+					void created(String key, CGNode value) {
+						changed[0] = true;
+					}
+
+					@Override
+					void updated(String key, CGNode oldValue, CGNode newValue) {
+					}
+
+					@Override
+					void deleted(String key, CGNode value) {
+						changed[0] = true;
+					}
+				});
+				if (changed[0])
+					System.out.println("Changelist " + i + " changed node: " + key);
+			}
+
+			@Override
+			void deleted(String key, CGNode value) {
+				System.out.println("Changelist " + i + " deleted node: " + key);
+			}
+		});
+	}
+
+	static <K, V> void diff(Map<K, V> oldMap, Map<K, V> newMap, Differ<K, V> d) {
+		Map<K, V> tmp = new HashMap<>(newMap);
+		for (Entry<K, V> oldEntry : oldMap.entrySet()) {
+			K key = oldEntry.getKey();
+			V oldValue = oldEntry.getValue();
+			V newValue = tmp.remove(key);
+			if (newValue == null)
+				d.deleted(key, oldValue);
+			else
+				d.updated(key, oldValue, newValue);
 		}
+		for (Entry<K, V> newEntry : tmp.entrySet())
+			d.created(newEntry.getKey(), newEntry.getValue());
+	}
+
+	static abstract class Differ<K, V> {
+		abstract void created(K key, V value);
+
+		abstract void updated(K key, V oldValue, V newValue);
+
+		abstract void deleted(K key, V value);
+	}
+
+	private static Map<String, CGNode> idmap(Iterable<CGNode> nodes) {
+		return idmap(nodes.iterator());
+	}
+
+	private static Map<String, CGNode> idmap(Iterator<CGNode> nodes) {
+		Map<String, CGNode> nodesById = new HashMap<String, CGNode>();
+		while (nodes.hasNext()) {
+			CGNode node = nodes.next();
+			nodesById.put(getId(node), node);
+		}
+		return nodesById;
 	}
 
 	private static String getId(CGNode node) {
@@ -149,7 +210,6 @@ public class Blamer {
 	}
 
 	private static void printCallGraph(CallGraph callGraph) {
-		// System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
 		Set<CGNode> current = new TreeSet<>(new Comparator<CGNode>() {
 			@Override
 			public int compare(CGNode o1, CGNode o2) {
