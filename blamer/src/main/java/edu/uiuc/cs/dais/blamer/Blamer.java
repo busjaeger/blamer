@@ -37,12 +37,15 @@ import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Slicer.ControlDependenceOptions;
 import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
+import com.ibm.wala.shrikeBT.IInstruction;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.SSAInstruction;
+import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
 import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
+import com.ibm.wala.util.collections.Filter;
 import com.ibm.wala.util.collections.HashSetMultiMap;
 import com.ibm.wala.util.collections.MultiMap;
 import com.ibm.wala.util.config.AnalysisScopeReader;
@@ -114,17 +117,29 @@ public class Blamer {
 				failureLineNumber);
 		final Collection<Statement> slice = makeSlice(pointerAnalysis, prevCallGraph, failureStatement).timed();
 
-		// for (Statement s : slice)
-		// if
-		// (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
-		// .equals(ClassLoaderReference.Application))
-		// System.out.println(s);
+		for (Statement s : slice)
+			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
+					.equals(ClassLoaderReference.Application))
+				;// System.out.println(s);
 	}
 
 	private static void addChangedNodes(final CallGraph oldGraph, final CallGraph newGraph, final int i,
 			final MultiMap<String, Integer> changedNodes) {
-		Map<String, CGNode> oldNodesById = idmap(DFS.getReachableNodes(oldGraph, oldGraph.getEntrypointNodes()));
-		Map<String, CGNode> newNodesById = idmap(DFS.getReachableNodes(newGraph, newGraph.getEntrypointNodes()));
+
+		// only application-level nodes can change (skip JVM classes)
+		@SuppressWarnings("deprecation")
+		final Filter<CGNode> loaderFilter = new Filter<CGNode>() {
+			@Override
+			public boolean accepts(CGNode node) {
+				return node.getMethod().getDeclaringClass().getClassLoader().getReference()
+						.equals(ClassLoaderReference.Application);
+			}
+		};
+
+		Map<String, CGNode> oldNodesById = createIdMap(DFS.getReachableNodes(oldGraph, oldGraph.getEntrypointNodes(),
+				loaderFilter));
+		Map<String, CGNode> newNodesById = createIdMap(DFS.getReachableNodes(newGraph, newGraph.getEntrypointNodes(),
+				loaderFilter));
 
 		diff(oldNodesById, newNodesById, new Differ<String, CGNode>() {
 			@Override
@@ -135,6 +150,8 @@ public class Blamer {
 
 			@Override
 			void updated(String key, final CGNode oldValue, final CGNode newValue) {
+
+				// 1. compare successors (dynamic dispatch behavior may change)
 				Map<String, CGNode> oldSucc = idmap(oldGraph.getSuccNodes(oldValue));
 				Map<String, CGNode> newSucc = idmap(newGraph.getSuccNodes(newValue));
 				final boolean[] changed = new boolean[1];
@@ -146,6 +163,33 @@ public class Blamer {
 
 					@Override
 					void updated(String key, CGNode oldValue, CGNode newValue) {
+						// if node already marked changed, don't bother looking
+						if (changed[0])
+							return;
+
+						// cast assumes all methods loaded from binaries
+						IBytecodeMethod oldM = (IBytecodeMethod) oldValue.getMethod();
+						IBytecodeMethod newM = (IBytecodeMethod) newValue.getMethod();
+						IInstruction[] oldInsts;
+						IInstruction[] newInsts;
+						try {
+							oldInsts = oldM.getInstructions();
+							newInsts = newM.getInstructions();
+						} catch (InvalidClassFileException e) {
+							throw new RuntimeException(e);
+						}
+
+						// for now just compare instructions (technically not good enough)
+						if (oldInsts.length == newInsts.length) {
+							for (int i = 0; i < oldInsts.length; i++)
+								if (!oldInsts[i].equals(newInsts[i])) {
+									System.out.println(oldInsts[i] + " does not match " + newInsts[i] + " in " + oldM);
+									changed[0] = true;
+								}
+						} else {
+							System.out.println("not same length");
+							changed[0] = true;
+						}
 					}
 
 					@Override
@@ -153,8 +197,11 @@ public class Blamer {
 						changed[0] = true;
 					}
 				});
-				if (changed[0])
+
+				if (changed[0]) {
 					System.out.println("Changelist " + i + " changed node: " + key);
+					changedNodes.put(key, i);
+				}
 			}
 
 			@Override
@@ -187,7 +234,7 @@ public class Blamer {
 		abstract void deleted(K key, V value);
 	}
 
-	private static Map<String, CGNode> idmap(Iterable<CGNode> nodes) {
+	private static Map<String, CGNode> createIdMap(Iterable<CGNode> nodes) {
 		return idmap(nodes.iterator());
 	}
 
@@ -209,6 +256,7 @@ public class Blamer {
 		return typeName + "#" + selector;
 	}
 
+	@SuppressWarnings("unused")
 	private static void printCallGraph(CallGraph callGraph) {
 		Set<CGNode> current = new TreeSet<>(new Comparator<CGNode>() {
 			@Override
