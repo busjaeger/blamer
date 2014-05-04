@@ -6,6 +6,11 @@ import static java.util.Collections.singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.ibm.wala.classLoader.IBytecodeMethod;
@@ -38,6 +43,9 @@ import com.ibm.wala.types.TypeName;
 import com.ibm.wala.types.TypeReference;
 import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.config.AnalysisScopeReader;
+import com.ibm.wala.util.intset.IntIterator;
+import com.ibm.wala.util.intset.IntSet;
+import com.ibm.wala.util.intset.IntSetAction;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
 import com.ibm.wala.util.strings.ImmutableByteArray;
@@ -82,7 +90,7 @@ public class Blamer {
 			final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
 			final CallGraph callGraph = makeCallGraph(builder, options).timed();
 
-			System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
+			printCallGraph(callGraph);
 
 			// 3. compute forward slice
 			final PointerAnalysis pointerAnalysis = builder.getPointerAnalysis();
@@ -94,6 +102,32 @@ public class Blamer {
 				if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
 						.equals(ClassLoaderReference.Application))
 					System.out.println(s);
+		}
+	}
+
+	private static void printCallGraph(CallGraph callGraph) {
+		// System.out.println(PDFCallGraph.pruneForAppLoader(callGraph));
+		Set<CGNode> current = new TreeSet<>(new Comparator<CGNode>() {
+			@Override
+			public int compare(CGNode o1, CGNode o2) {
+				return Integer.valueOf(o1.getGraphNodeId()).compareTo(o2.getGraphNodeId());
+			}
+		});
+		current.addAll(callGraph.getEntrypointNodes());
+		Set<CGNode> visited = new HashSet<>();
+		while (!current.isEmpty()) {
+			Iterator<CGNode> it = current.iterator();
+			CGNode node = it.next();
+			it.remove();
+			if (!visited.add(node))
+				continue;
+			System.out.println(callGraph.getNumber(node) + " " + node.getMethod());
+			for (Iterator<CGNode> sit = callGraph.getSuccNodes(node); sit.hasNext();) {
+				CGNode successor = sit.next();
+				System.out.println("  " + callGraph.getNumber(successor) + ':' + successor.getMethod());
+				current.add(successor);
+			}
+			System.out.println();
 		}
 	}
 
