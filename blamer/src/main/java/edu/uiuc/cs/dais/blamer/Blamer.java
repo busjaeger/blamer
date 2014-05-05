@@ -117,17 +117,21 @@ public class Blamer {
 				failureLineNumber);
 		final Collection<Statement> slice = makeSlice(pointerAnalysis, prevCallGraph, failureStatement).timed();
 
-		for (Statement s : slice)
+		for (Statement s : slice) {
 			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
-					.equals(ClassLoaderReference.Application))
-				;// System.out.println(s);
+					.equals(ClassLoaderReference.Application)) {
+				String id = getId(s.getNode());
+				Set<Integer> changes = changedNodes.get(id);
+				if (!changes.isEmpty())
+					System.out.println("Statement " + s + " changed by " + changes);
+			}
+		}
 	}
 
 	private static void addChangedNodes(final CallGraph oldGraph, final CallGraph newGraph, final int i,
 			final MultiMap<String, Integer> changedNodes) {
 
 		// only application-level nodes can change (skip JVM classes)
-		@SuppressWarnings("deprecation")
 		final Filter<CGNode> loaderFilter = new Filter<CGNode>() {
 			@Override
 			public boolean accepts(CGNode node) {
