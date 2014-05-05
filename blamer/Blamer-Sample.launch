@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/blamer/src/main/java/edu/uiuc/cs/dais/blamer/Blamer.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<booleanAttribute key="org.eclipse.jdt.launching.ATTR_USE_START_ON_FIRST_THREAD" value="true"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="edu.uiuc.cs.dais.blamer.Blamer"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="${project_loc}/../blamer-sample-v0/target/classes,${project_loc}/../blamer-sample-v1/target/classes&#10;Lsample/AlgorithmsTest&#10;testEmpty&#10;Lsample/Algorithms&#10;binarySearch&#10;27"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="blamer"/>
+</launchConfiguration>
