@@ -92,6 +92,8 @@ public class Blamer {
 		final CallGraphBuilder builder0 = createCallGraphBuilder(scope0, cha0, options0);
 		final CallGraph callGraph0 = makeCallGraph(builder0, options0).timed();
 
+		printCallGraph(callGraph0);
+
 		CallGraphBuilder prevBuilder = builder0;
 		CallGraph prevCallGraph = callGraph0;
 		AnalysisScope prevScope = scope0;
