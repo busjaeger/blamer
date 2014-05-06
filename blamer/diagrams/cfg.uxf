@@ -2,10 +2,21 @@
 <diagram program="umlet" version="12.0">
   <zoom_level>10</zoom_level>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>360</x>
+      <y>130</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>320</x>
-      <y>380</y>
+      <y>370</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -17,7 +28,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>0</x>
-      <y>330</y>
+      <y>320</y>
       <w>400</w>
       <h>570</h>
     </coordinates>
@@ -29,7 +40,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>0</x>
-      <y>60</y>
+      <y>50</y>
       <w>400</w>
       <h>840</h>
     </coordinates>
@@ -38,10 +49,21 @@ fg=red</panel_attributes>
     <additional_attributes>380;820;30;820;30;30;360;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>360</x>
+      <y>60</y>
+      <w>200</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>430</x>
-      <y>270</y>
+      <y>260</y>
       <w>150</w>
       <h>70</h>
     </coordinates>
@@ -50,10 +72,34 @@ fg=red</panel_attributes>
     <additional_attributes>130;50;30;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>140</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>7 = binaryop(sub) 5 6
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>720</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>16 = binaryop(sub) 10 6
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>320</x>
-      <y>450</y>
+      <y>440</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -65,7 +111,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>110</x>
-      <y>670</y>
+      <y>660</y>
       <w>150</w>
       <h>70</h>
     </coordinates>
@@ -74,10 +120,22 @@ fg=red</panel_attributes>
     <additional_attributes>30;50;130;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>70</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>5 = ArrayLength 1
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>470</x>
-      <y>420</y>
+      <y>410</y>
       <w>120</w>
       <h>480</h>
     </coordinates>
@@ -86,10 +144,56 @@ fg=red</panel_attributes>
     <additional_attributes>30;460;100;460;100;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>360</x>
+      <y>240</y>
+      <w>200</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>180</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>goto
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>160</x>
+      <y>610</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>15 = compare(cmp) 11 2
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>250</x>
+      <y>420</y>
+      <w>200</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>210</x>
-      <y>560</y>
+      <y>550</y>
       <w>160</w>
       <h>70</h>
     </coordinates>
@@ -98,10 +202,93 @@ fg=red</panel_attributes>
     <additional_attributes>30;50;140;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>500</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>12 = compare(cmp) 11 2
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>480</x>
+      <y>320</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>18 = binaryop(add) 14 6
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>480</x>
+      <y>400</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>return 19
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>760</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>goto
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>610</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>13 = binaryop(add) 10 6
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>320</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>8 = binaryop(add) 14 17
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>250</x>
+      <y>490</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>430</x>
-      <y>200</y>
+      <y>190</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -110,10 +297,57 @@ fg=red</panel_attributes>
     <additional_attributes>30;50;30;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>250</x>
+      <y>710</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>50</x>
+      <y>720</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>return 10
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>250</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>cond branch(le) 14 17
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>540</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>cond branch(ge) 12 4
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>430</x>
-      <y>90</y>
+      <y>80</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -125,7 +359,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>320</x>
-      <y>560</y>
+      <y>550</y>
       <w>160</w>
       <h>70</h>
     </coordinates>
@@ -134,10 +368,79 @@ fg=red</panel_attributes>
     <additional_attributes>140;50;30;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>360</x>
+      <y>600</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>40</x>
+      <y>710</y>
+      <w>200</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>160</x>
+      <y>650</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>cond branch(le) 15 4
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>430</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>11 = arrayload 1[10]
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>370</x>
+      <y>650</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>goto
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>150</x>
+      <y>600</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>210</x>
-      <y>670</y>
+      <y>660</y>
       <w>150</w>
       <h>70</h>
     </coordinates>
@@ -146,10 +449,21 @@ fg=red</panel_attributes>
     <additional_attributes>130;50;30;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>250</x>
+      <y>310</y>
+      <w>200</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.UseCase</type>
     <coordinates>
       <x>380</x>
-      <y>860</y>
+      <y>850</y>
       <w>120</w>
       <h>40</h>
     </coordinates>
@@ -160,7 +474,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>420</x>
-      <y>240</y>
+      <y>230</y>
       <w>290</w>
       <h>540</h>
     </coordinates>
@@ -169,10 +483,22 @@ fg=red</panel_attributes>
     <additional_attributes>140;30;270;30;270;520;30;520</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>480</x>
+      <y>360</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>19 = neg 18
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>530</x>
-      <y>240</y>
+      <y>230</y>
       <w>180</w>
       <h>430</h>
     </coordinates>
@@ -184,7 +510,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>430</x>
-      <y>670</y>
+      <y>660</y>
       <w>50</w>
       <h>210</h>
     </coordinates>
@@ -193,10 +519,21 @@ fg=red</panel_attributes>
     <additional_attributes>30;190;30;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>470</x>
+      <y>310</y>
+      <w>200</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes/>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>330</x>
-      <y>270</y>
+      <y>260</y>
       <w>150</w>
       <h>70</h>
     </coordinates>
@@ -205,10 +542,22 @@ fg=red</panel_attributes>
     <additional_attributes>30;50;130;30</additional_attributes>
   </element>
   <element>
+    <type>com.umlet.element.custom.State</type>
+    <coordinates>
+      <x>260</x>
+      <y>360</y>
+      <w>180</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>10 = binaryop(div) 8 9
+bg=light_gray</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>0</x>
-      <y>420</y>
+      <y>410</y>
       <w>400</w>
       <h>480</h>
     </coordinates>
@@ -220,7 +569,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.UseCase</type>
     <coordinates>
       <x>400</x>
-      <y>10</y>
+      <y>0</y>
       <w>120</w>
       <h>40</h>
     </coordinates>
@@ -231,7 +580,7 @@ fg=red</panel_attributes>
     <type>com.umlet.element.Relation</type>
     <coordinates>
       <x>430</x>
-      <y>20</y>
+      <y>10</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -239,375 +588,4 @@ fg=red</panel_attributes>
 fg=red</panel_attributes>
     <additional_attributes>30;50;30;30</additional_attributes>
   </element>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>480</x>
-        <y>330</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>18 = binaryop(add) 14 6
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>480</x>
-        <y>410</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>return 19
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>480</x>
-        <y>370</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>19 = neg 18
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>470</x>
-        <y>320</y>
-        <w>200</w>
-        <h>130</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>360</x>
-        <y>70</y>
-        <w>200</w>
-        <h>50</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>80</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>5 = ArrayLength 1
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>330</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>8 = binaryop(add) 14 17
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>250</x>
-        <y>320</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>370</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>10 = binaryop(div) 8 9
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>510</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>12 = compare(cmp) 11 2
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>250</x>
-        <y>500</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>550</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>cond branch(ge) 12 4
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>360</x>
-        <y>250</y>
-        <w>200</w>
-        <h>50</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>260</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>cond branch(le) 14 17
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>360</x>
-        <y>140</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>150</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>7 = binaryop(sub) 5 6
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>190</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>goto
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>250</x>
-        <y>430</y>
-        <w>200</w>
-        <h>50</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>440</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>11 = arrayload 1[10]
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>620</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>13 = binaryop(add) 10 6
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>360</x>
-        <y>610</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>370</x>
-        <y>660</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>goto
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>50</x>
-        <y>730</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>return 10
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>40</x>
-        <y>720</y>
-        <w>200</w>
-        <h>50</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>730</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>16 = binaryop(sub) 10 6
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>260</x>
-        <y>770</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>goto
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>250</x>
-        <y>720</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-  </group>
-  <group>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>160</x>
-        <y>620</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>15 = compare(cmp) 11 2
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>160</x>
-        <y>660</y>
-        <w>180</w>
-        <h>30</h>
-      </coordinates>
-      <panel_attributes>cond branch(le) 15 4
-bg=light_gray</panel_attributes>
-      <additional_attributes/>
-    </element>
-    <element>
-      <type>com.umlet.element.custom.State</type>
-      <coordinates>
-        <x>150</x>
-        <y>610</y>
-        <w>200</w>
-        <h>90</h>
-      </coordinates>
-      <panel_attributes/>
-      <additional_attributes/>
-    </element>
-  </group>
 </diagram>
