@@ -12,9 +12,15 @@ public class AlgorithmsTest {
 		assertEquals(-1, actual);
 	}
 
-	public void testFindHigh() {
+	public void testHigh() {
 		long[] input = new long[] { 1, 3 };
 		long actual = Algorithms.binarySearch(input, 3);
+		assertEquals(1, actual);
+	}
+
+	public void testLow() {
+		long[] input = new long[] { 1, 2, 3, 4 };
+		long actual = Algorithms.binarySearch(input, 2);
 		assertEquals(1, actual);
 	}
 
@@ -34,10 +40,17 @@ public class AlgorithmsTest {
 				return null;
 			}
 		});
-		runTest("testFindLow", new Callable<Void>() {
+		runTest("testHigh", new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
-				test.testFindHigh();
+				test.testHigh();
+				return null;
+			}
+		});
+		runTest("testLow", new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				test.testLow();
 				return null;
 			}
 		});

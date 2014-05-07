@@ -31,9 +31,9 @@ public class Algorithms {
 			else if (midVal > key)
 				high = mid - 1;
 			else
-				return mid; // key found
+				return mid;
 		}
-		return -(low + 1); // key not found.
+		return -(low + 1);
 	}
 
 }

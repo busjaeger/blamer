@@ -29,7 +29,7 @@ public class Algorithms {
 			if (midVal < key)
 				low = mid + 1;
 			else if (midVal > key)
-				high = mid - 1;
+				high = mid - 2;
 			else
 				return mid;
 		}
