@@ -1,27 +1,35 @@
 package sample;
 
+import static sample.Algorithms.binarySearch;
+
 import java.util.concurrent.Callable;
 
 public class AlgorithmsTest {
 
 	// test cases
 
-	public void testEmpty() {
+	void testEmpty() {
 		long[] input = new long[0];
-		long actual = Algorithms.binarySearch(input, 1);
+		long actual = binarySearch(input, 1);
 		assertEquals(-1, actual);
 	}
 
-	public void testHigh() {
-		long[] input = new long[] { 1, 3 };
-		long actual = Algorithms.binarySearch(input, 3);
+	void testLow() {
+		long[] input = new long[] { 1, 2, 3, 4 };
+		long actual = binarySearch(input, 1);
+		assertEquals(0, actual);
+	}
+
+	void testMid() {
+		long[] input = new long[] { 1, 2, 3, 4 };
+		long actual = binarySearch(input, 2);
 		assertEquals(1, actual);
 	}
 
-	public void testLow() {
+	void testHigh() {
 		long[] input = new long[] { 1, 2, 3, 4 };
-		long actual = Algorithms.binarySearch(input, 2);
-		assertEquals(1, actual);
+		long actual = binarySearch(input, 3);
+		assertEquals(2, actual);
 	}
 
 	// minimal test driver
@@ -40,17 +48,24 @@ public class AlgorithmsTest {
 				return null;
 			}
 		});
-		runTest("testHigh", new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				test.testHigh();
-				return null;
-			}
-		});
 		runTest("testLow", new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
 				test.testLow();
+				return null;
+			}
+		});
+		runTest("testMid", new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				test.testMid();
+				return null;
+			}
+		});
+		runTest("testHigh", new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				test.testHigh();
 				return null;
 			}
 		});

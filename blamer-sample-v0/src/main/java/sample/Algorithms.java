@@ -18,7 +18,7 @@ public class Algorithms {
 	 *         <tt>a.length</tt> if all elements in the array are less than the specified key. Note that this guarantees
 	 *         that the return value will be &gt;= 0 if and only if the key is found.
 	 */
-	public static int binarySearch(long[] a, long key) {
+	static int binarySearch(long[] a, long key) {
 		int low = 0;
 		int high = a.length - 1;
 
