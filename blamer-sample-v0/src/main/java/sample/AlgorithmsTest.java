@@ -9,25 +9,25 @@ public class AlgorithmsTest {
 	// test cases
 
 	void testEmpty() {
-		long[] input = new long[0];
+		long[] input = {};
 		long actual = binarySearch(input, 1);
 		assertEquals(-1, actual);
 	}
 
 	void testLow() {
-		long[] input = new long[] { 1, 2, 3, 4 };
+		long[] input = { 1, 2, 3, 4 };
 		long actual = binarySearch(input, 1);
 		assertEquals(0, actual);
 	}
 
 	void testMid() {
-		long[] input = new long[] { 1, 2, 3, 4 };
+		long[] input = { 1, 2, 3, 4 };
 		long actual = binarySearch(input, 2);
 		assertEquals(1, actual);
 	}
 
 	void testHigh() {
-		long[] input = new long[] { 1, 2, 3, 4 };
+		long[] input = { 1, 2, 3, 4 };
 		long actual = binarySearch(input, 3);
 		assertEquals(2, actual);
 	}
