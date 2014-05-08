@@ -1,10 +1,13 @@
 package edu.uiuc.cs.dais.blamer;
 
 import static com.ibm.wala.core.tests.callGraph.CallGraphTestUtil.REGRESSION_EXCLUSIONS;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,7 +40,7 @@ import com.ibm.wala.ipa.slicer.Slicer;
 import com.ibm.wala.ipa.slicer.Slicer.ControlDependenceOptions;
 import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
-import com.ibm.wala.shrikeBT.IInstruction;
+import com.ibm.wala.ipa.slicer.StatementWithInstructionIndex;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
@@ -48,12 +51,15 @@ import com.ibm.wala.util.WalaException;
 import com.ibm.wala.util.collections.Filter;
 import com.ibm.wala.util.collections.HashSetMultiMap;
 import com.ibm.wala.util.collections.MultiMap;
+import com.ibm.wala.util.collections.Pair;
 import com.ibm.wala.util.config.AnalysisScopeReader;
 import com.ibm.wala.util.graph.traverse.DFS;
 import com.ibm.wala.util.io.FileProvider;
 import com.ibm.wala.util.strings.Atom;
 import com.ibm.wala.util.strings.ImmutableByteArray;
 import com.ibm.wala.util.strings.UTF8Convert;
+
+import edu.uiuc.cs.dais.blamer.Blamer.Match.Label;
 
 public class Blamer {
 
@@ -97,7 +103,7 @@ public class Blamer {
 		CallGraphBuilder prevBuilder = builder0;
 		CallGraph prevCallGraph = callGraph0;
 		AnalysisScope prevScope = scope0;
-		MultiMap<String, Integer> changedNodes = new HashSetMultiMap<String, Integer>();
+		Map<CGNode, MultiMap<SSAInstruction, Integer>> changes = new HashMap<>();
 		for (int i = 1; i < versions.length; i++) {
 			// 1. create class hierarchy
 			final AnalysisScope scope = createAnalysisScope(versions[i]);
@@ -108,9 +114,13 @@ public class Blamer {
 			final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
 			final CallGraph callGraph = makeCallGraph(builder, options).timed();
 
-			addChangedNodes(prevCallGraph, callGraph, i, changedNodes);
+			changes = callGraphDiff(prevCallGraph, callGraph, i, changes);
+			prevScope = scope;
+			prevBuilder = builder;
+			prevCallGraph = callGraph;
 		}
 
+		System.out.println(changes);
 		// printCallGraph(prevCallGraph);
 
 		// 3. compute backward slice
@@ -122,16 +132,23 @@ public class Blamer {
 		for (Statement s : slice) {
 			if (s.getNode().getMethod().getDeclaringClass().getClassLoader().getReference()
 					.equals(ClassLoaderReference.Application)) {
-				String id = getId(s.getNode());
-				Set<Integer> changes = changedNodes.get(id);
-				if (!changes.isEmpty())
-					System.out.println("Statement " + s + " changed by " + changes);
+				MultiMap<SSAInstruction, Integer> nodeChanges = changes.get(s.getNode());
+				if (nodeChanges == null)
+					continue;
+
+				if (s instanceof StatementWithInstructionIndex) {
+					StatementWithInstructionIndex sii = (StatementWithInstructionIndex) s;
+					SSAInstruction inst = sii.getInstruction();
+					Set<Integer> instChanges = nodeChanges.get(inst);
+					if (!instChanges.isEmpty())
+						System.out.println("Statement " + s + " changed by " + instChanges);
+				}
 			}
 		}
 	}
 
-	private static void addChangedNodes(final CallGraph oldGraph, final CallGraph newGraph, final int i,
-			final MultiMap<String, Integer> changedNodes) {
+	private static Map<CGNode, MultiMap<SSAInstruction, Integer>> callGraphDiff(final CallGraph oldGraph,
+			final CallGraph newGraph, final int delta, final Map<CGNode, MultiMap<SSAInstruction, Integer>> prevChanges) {
 
 		// only application-level nodes can change (skip JVM classes)
 		final Filter<CGNode> loaderFilter = new Filter<CGNode>() {
@@ -146,75 +163,131 @@ public class Blamer {
 				loaderFilter));
 		Map<String, CGNode> newNodesById = createIdMap(DFS.getReachableNodes(newGraph, newGraph.getEntrypointNodes(),
 				loaderFilter));
-
-		diff(oldNodesById, newNodesById, new Differ<String, CGNode>() {
-			@Override
-			void created(String key, CGNode value) {
-				System.out.println("Changelist " + i + " created node: " + key);
-				changedNodes.put(key, i);
-			}
-
-			@Override
-			void updated(String key, final CGNode oldValue, final CGNode newValue) {
-
-				// 1. compare successors (dynamic dispatch behavior may change)
-				Map<String, CGNode> oldSucc = idmap(oldGraph.getSuccNodes(oldValue));
-				Map<String, CGNode> newSucc = idmap(newGraph.getSuccNodes(newValue));
-				final boolean[] changed = new boolean[1];
-				diff(oldSucc, newSucc, new Differ<String, CGNode>() {
-					@Override
-					void created(String key, CGNode value) {
-						changed[0] = true;
-					}
-
-					@Override
-					void updated(String key, CGNode oldValue, CGNode newValue) {
-						// if node already marked changed, don't bother looking
-						if (changed[0])
-							return;
-
-						// cast assumes all methods loaded from binaries
-						IBytecodeMethod oldM = (IBytecodeMethod) oldValue.getMethod();
-						IBytecodeMethod newM = (IBytecodeMethod) newValue.getMethod();
-						IInstruction[] oldInsts;
-						IInstruction[] newInsts;
-						try {
-							oldInsts = oldM.getInstructions();
-							newInsts = newM.getInstructions();
-						} catch (InvalidClassFileException e) {
-							throw new RuntimeException(e);
+		Map<CGNode, MultiMap<SSAInstruction, Integer>> nodeChanges = new HashMap<>();
+		for (Pair<CGNode, CGNode> pair : diff(oldNodesById, newNodesById)) {
+			if (pair.fst == null) {
+				assert pair.snd != null;
+				putAll(getOrCreateSSAChanges(nodeChanges, pair.snd), asList(pair.snd.getIR().getInstructions()), delta);
+			} else if (pair.snd != null) {
+				for (Match<SSAInstruction> match : callGraphNodeDiff(pair.fst, pair.snd)) {
+					switch (match.label) {
+					case CREATED:
+						getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd, delta);
+						break;
+					case DELETED:
+						break;
+					case MODIFIED:
+					case UNCHANGED:
+						MultiMap<SSAInstruction, Integer> prevSSAChanges = prevChanges.get(pair.fst);
+						if (prevSSAChanges != null) {
+							Set<Integer> values = prevSSAChanges.get(match.fst);
+							if (!values.isEmpty()) {
+								getOrCreateSSAChanges(nodeChanges, pair.snd).putAll(match.snd, values);
+							}
 						}
-
-						// for now just compare instructions (technically not good enough)
-						if (oldInsts.length == newInsts.length) {
-							for (int i = 0; i < oldInsts.length; i++)
-								if (!oldInsts[i].equals(newInsts[i])) {
-									System.out.println(oldInsts[i] + " does not match " + newInsts[i] + " in " + oldM);
-									changed[0] = true;
-								}
-						} else {
-							System.out.println("not same length");
-							changed[0] = true;
-						}
+						if (match.label == Label.MODIFIED)
+							getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd, delta);
+						break;
+					default:
+						break;
 					}
-
-					@Override
-					void deleted(String key, CGNode value) {
-						changed[0] = true;
-					}
-				});
-
-				if (changed[0]) {
-					System.out.println("Changelist " + i + " changed node: " + key);
-					changedNodes.put(key, i);
 				}
 			}
+		}
+		return nodeChanges;
+	}
 
-			@Override
-			void deleted(String key, CGNode value) {
-				System.out.println("Changelist " + i + " deleted node: " + key);
+	private static MultiMap<SSAInstruction, Integer> getOrCreateSSAChanges(
+			Map<CGNode, MultiMap<SSAInstruction, Integer>> nodeChanges, CGNode node) {
+		MultiMap<SSAInstruction, Integer> ssaChanges;
+		if ((ssaChanges = nodeChanges.get(node)) == null)
+			nodeChanges.put(node, ssaChanges = new HashSetMultiMap<>());
+		return ssaChanges;
+	}
+
+	// TODO implement Hammock Match
+	static Collection<Match<SSAInstruction>> callGraphNodeDiff(CGNode oldNode, CGNode newNode) {
+		SSAInstruction[] oldInstructions = oldNode.getIR().getInstructions();
+		SSAInstruction[] newInstructions = newNode.getIR().getInstructions();
+		if (oldInstructions.length != newInstructions.length)
+			throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
+		Collection<Match<SSAInstruction>> matches = new ArrayList<>();
+		for (int i = 0; i < oldInstructions.length; i++) {
+			if (oldInstructions[i] == null) {
+				if (newInstructions[i] != null)
+					throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
+			} else if (newInstructions[i] == null) {
+				throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
+			} else {
+				String l1 = oldInstructions[i].toString(oldNode.getIR().getSymbolTable());
+				String l2 = newInstructions[i].toString(newNode.getIR().getSymbolTable());
+				matches.add(Match.make(l1.equals(l2) ? Label.UNCHANGED : Label.MODIFIED, oldInstructions[i],
+						newInstructions[i]));
 			}
-		});
+		}
+		return matches;
+	}
+
+	static <K, V> Collection<Pair<V, V>> diff(Map<K, V> oldMap, Map<K, V> newMap) {
+		Collection<Pair<V, V>> diff = new ArrayList<>(newMap.size());
+		for (K key : newMap.keySet())
+			diff.add(Pair.make(oldMap.get(key), newMap.get(key)));
+		for (K key : oldMap.keySet())
+			if (!newMap.containsKey(key))
+				diff.add(Pair.make(oldMap.get(key), newMap.get(key)));
+		return diff;
+	}
+
+	static <K, V> void putAll(MultiMap<K, V> map, Iterable<K> keys, V value) {
+		for (K key : keys)
+			if (key != null)
+				map.put(key, value);
+	}
+
+	static class Match<V> extends Pair<V, V> {
+
+		static <V> Match<V> make(Label label, V oldV, V newV) {
+			return new Match<V>(label, oldV, newV);
+		}
+
+		static enum Label {
+			CREATED, DELETED, MODIFIED, UNCHANGED
+		}
+
+		public final Label label;
+
+		protected Match(Label label, V fst, V snd) {
+			super(fst, snd);
+			this.label = label;
+		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = super.hashCode();
+			result = prime * result + ((label == null) ? 0 : label.hashCode());
+			return result;
+		}
+
+		@Override
+		public String toString() {
+			return "Match [label=" + label + ", fst=" + fst + ", snd=" + snd + "]";
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (!super.equals(obj))
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Match<?> other = (Match<?>) obj;
+			if (label != other.label)
+				return false;
+			return true;
+		}
+
 	}
 
 	static <K, V> void diff(Map<K, V> oldMap, Map<K, V> newMap, Differ<K, V> d) {
@@ -262,7 +335,6 @@ public class Blamer {
 		return typeName + "#" + selector;
 	}
 
-	@SuppressWarnings("unused")
 	private static void printCallGraph(CallGraph callGraph) {
 		Set<CGNode> current = new TreeSet<>(new Comparator<CGNode>() {
 			@Override

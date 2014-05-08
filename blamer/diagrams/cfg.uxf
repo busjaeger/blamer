@@ -44,7 +44,7 @@ fg=red</panel_attributes>
       <w>300</w>
       <h>570</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-
+    <panel_attributes>lt=&lt;.
 fg=red</panel_attributes>
     <additional_attributes>280;550;30;550;30;30;140;30</additional_attributes>
   </element>
@@ -56,7 +56,7 @@ fg=red</panel_attributes>
       <w>300</w>
       <h>840</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-
+    <panel_attributes>lt=&lt;.
 fg=red</panel_attributes>
     <additional_attributes>280;820;30;820;30;30;250;30</additional_attributes>
   </element>
@@ -561,7 +561,7 @@ bg=light_gray</panel_attributes>
       <w>300</w>
       <h>480</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-
+    <panel_attributes>lt=&lt;.
 fg=red</panel_attributes>
     <additional_attributes>280;460;30;460;30;30;140;30</additional_attributes>
   </element>
