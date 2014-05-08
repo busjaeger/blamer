@@ -7,7 +7,6 @@ import static java.util.Collections.singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -98,8 +97,6 @@ public class Blamer {
 		final CallGraphBuilder builder0 = createCallGraphBuilder(scope0, cha0, options0);
 		final CallGraph callGraph0 = makeCallGraph(builder0, options0).timed();
 
-		printCallGraph(callGraph0);
-
 		CallGraphBuilder prevBuilder = builder0;
 		CallGraph prevCallGraph = callGraph0;
 		AnalysisScope prevScope = scope0;
@@ -119,9 +116,6 @@ public class Blamer {
 			prevBuilder = builder;
 			prevCallGraph = callGraph;
 		}
-
-		System.out.println(changes);
-		// printCallGraph(prevCallGraph);
 
 		// 3. compute backward slice
 		final PointerAnalysis pointerAnalysis = prevBuilder.getPointerAnalysis();
@@ -335,7 +329,7 @@ public class Blamer {
 		return typeName + "#" + selector;
 	}
 
-	private static void printCallGraph(CallGraph callGraph) {
+	static void printCallGraph(CallGraph callGraph) {
 		Set<CGNode> current = new TreeSet<>(new Comparator<CGNode>() {
 			@Override
 			public int compare(CGNode o1, CGNode o2) {

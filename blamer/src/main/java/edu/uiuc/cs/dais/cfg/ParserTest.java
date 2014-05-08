@@ -1,4 +1,4 @@
-package edu.uiuc.cs.dais.blamer;
+package edu.uiuc.cs.dais.cfg;
 
 import java.io.File;
 import java.io.IOException;

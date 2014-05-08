@@ -41,13 +41,13 @@ public class AlgorithmsTest {
 
 	public static void main(String[] args) {
 		final AlgorithmsTest test = new AlgorithmsTest();
-		runTest("testEmtpy", new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				test.testEmpty();
-				return null;
-			}
-		});
+//		runTest("testEmtpy", new Callable<Void>() {
+//			@Override
+//			public Void call() throws Exception {
+//				test.testEmpty();
+//				return null;
+//			}
+//		});
 		runTest("testLow", new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
@@ -55,20 +55,20 @@ public class AlgorithmsTest {
 				return null;
 			}
 		});
-		runTest("testMid", new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				test.testMid();
-				return null;
-			}
-		});
-		runTest("testHigh", new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				test.testHigh();
-				return null;
-			}
-		});
+//		runTest("testMid", new Callable<Void>() {
+//			@Override
+//			public Void call() throws Exception {
+//				test.testMid();
+//				return null;
+//			}
+//		});
+//		runTest("testHigh", new Callable<Void>() {
+//			@Override
+//			public Void call() throws Exception {
+//				test.testHigh();
+//				return null;
+//			}
+//		});
 	}
 
 	static void runTest(String name, Callable<Void> test) {
