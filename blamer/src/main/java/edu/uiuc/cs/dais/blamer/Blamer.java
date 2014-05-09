@@ -41,6 +41,7 @@ import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.ipa.slicer.StatementWithInstructionIndex;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
+import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
@@ -88,6 +89,7 @@ public class Blamer {
 		final String failureMethodName = args[4];
 		final int failureLineNumber = Integer.parseInt(args[5]);
 
+		System.err.println("Initializing initial version");
 		String v0 = versions[0];
 		final AnalysisScope scope0 = createAnalysisScope(v0);
 		final ClassHierarchy cha0 = makeClassHierachy(scope0).timed();
@@ -96,12 +98,14 @@ public class Blamer {
 		final AnalysisOptions options0 = createAnalysisOptions(testClassName, testMethodName, scope0, cha0);
 		final CallGraphBuilder builder0 = createCallGraphBuilder(scope0, cha0, options0);
 		final CallGraph callGraph0 = makeCallGraph(builder0, options0).timed();
+		System.err.println();
 
 		CallGraphBuilder prevBuilder = builder0;
 		CallGraph prevCallGraph = callGraph0;
 		AnalysisScope prevScope = scope0;
 		Map<CGNode, MultiMap<SSAInstruction, Integer>> changes = new HashMap<>();
 		for (int i = 1; i < versions.length; i++) {
+			System.err.println("Processing version " + i);
 			// 1. create class hierarchy
 			final AnalysisScope scope = createAnalysisScope(versions[i]);
 			final ClassHierarchy cha = makeClassHierachy(scope).timed();
@@ -115,7 +119,14 @@ public class Blamer {
 			prevScope = scope;
 			prevBuilder = builder;
 			prevCallGraph = callGraph;
+			System.err.println();
 		}
+
+		for (CGNode changedNode : changes.keySet())
+			for (SSAInstruction changedInst : changes.get(changedNode).keySet())
+				System.out.println(changedNode.getMethod().getDeclaringClass().getName() + "."
+						+ changedNode.getMethod().getSignature() + "#" + changedInst.toString() + " modified by "
+						+ changes.get(changedNode).get(changedInst));
 
 		// 3. compute backward slice
 		final PointerAnalysis pointerAnalysis = prevBuilder.getPointerAnalysis();
@@ -201,8 +212,11 @@ public class Blamer {
 
 	// TODO implement Hammock Match
 	static Collection<Match<SSAInstruction>> callGraphNodeDiff(CGNode oldNode, CGNode newNode) {
-		SSAInstruction[] oldInstructions = oldNode.getIR().getInstructions();
-		SSAInstruction[] newInstructions = newNode.getIR().getInstructions();
+		IR oldIR = oldNode.getIR();
+		IR newIR = newNode.getIR();
+		SSAInstruction[] oldInstructions = oldIR.getInstructions();
+		SSAInstruction[] newInstructions = newIR.getInstructions();
+
 		if (oldInstructions.length != newInstructions.length)
 			throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
 		Collection<Match<SSAInstruction>> matches = new ArrayList<>();
