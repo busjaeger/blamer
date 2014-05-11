@@ -41,7 +41,6 @@ import com.ibm.wala.ipa.slicer.Slicer.DataDependenceOptions;
 import com.ibm.wala.ipa.slicer.Statement;
 import com.ibm.wala.ipa.slicer.StatementWithInstructionIndex;
 import com.ibm.wala.shrikeCT.InvalidClassFileException;
-import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.types.ClassLoaderReference;
 import com.ibm.wala.types.MethodReference;
@@ -59,7 +58,7 @@ import com.ibm.wala.util.strings.Atom;
 import com.ibm.wala.util.strings.ImmutableByteArray;
 import com.ibm.wala.util.strings.UTF8Convert;
 
-import edu.uiuc.cs.dais.blamer.Blamer.Match.Label;
+import edu.uiuc.cs.dais.blamer.CGNodeDifferencer.Label;
 
 public class Blamer {
 
@@ -174,10 +173,11 @@ public class Blamer {
 				assert pair.snd != null;
 				putAll(getOrCreateSSAChanges(nodeChanges, pair.snd), asList(pair.snd.getIR().getInstructions()), delta);
 			} else if (pair.snd != null) {
-				for (Match<SSAInstruction> match : callGraphNodeDiff(pair.fst, pair.snd)) {
-					switch (match.label) {
+				for (Pair<Label, Pair<SSAInstruction, SSAInstruction>> match : CGNodeDifferencer.difference(pair.fst,
+						pair.snd)) {
+					switch (match.fst) {
 					case CREATED:
-						getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd, delta);
+						getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd.snd, delta);
 						break;
 					case DELETED:
 						break;
@@ -185,13 +185,13 @@ public class Blamer {
 					case UNCHANGED:
 						MultiMap<SSAInstruction, Integer> prevSSAChanges = prevChanges.get(pair.fst);
 						if (prevSSAChanges != null) {
-							Set<Integer> values = prevSSAChanges.get(match.fst);
+							Set<Integer> values = prevSSAChanges.get(match.snd.fst);
 							if (!values.isEmpty()) {
-								getOrCreateSSAChanges(nodeChanges, pair.snd).putAll(match.snd, values);
+								getOrCreateSSAChanges(nodeChanges, pair.snd).putAll(match.snd.snd, values);
 							}
 						}
-						if (match.label == Label.MODIFIED)
-							getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd, delta);
+						if (match.fst == Label.MODIFIED)
+							getOrCreateSSAChanges(nodeChanges, pair.snd).put(match.snd.snd, delta);
 						break;
 					default:
 						break;
@@ -210,32 +210,6 @@ public class Blamer {
 		return ssaChanges;
 	}
 
-	// TODO implement Hammock Match
-	static Collection<Match<SSAInstruction>> callGraphNodeDiff(CGNode oldNode, CGNode newNode) {
-		IR oldIR = oldNode.getIR();
-		IR newIR = newNode.getIR();
-		SSAInstruction[] oldInstructions = oldIR.getInstructions();
-		SSAInstruction[] newInstructions = newIR.getInstructions();
-
-		if (oldInstructions.length != newInstructions.length)
-			throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
-		Collection<Match<SSAInstruction>> matches = new ArrayList<>();
-		for (int i = 0; i < oldInstructions.length; i++) {
-			if (oldInstructions[i] == null) {
-				if (newInstructions[i] != null)
-					throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
-			} else if (newInstructions[i] == null) {
-				throw new UnsupportedOperationException("Can't handle different instruction lengths yet");
-			} else {
-				String l1 = oldInstructions[i].toString(oldNode.getIR().getSymbolTable());
-				String l2 = newInstructions[i].toString(newNode.getIR().getSymbolTable());
-				matches.add(Match.make(l1.equals(l2) ? Label.UNCHANGED : Label.MODIFIED, oldInstructions[i],
-						newInstructions[i]));
-			}
-		}
-		return matches;
-	}
-
 	static <K, V> Collection<Pair<V, V>> diff(Map<K, V> oldMap, Map<K, V> newMap) {
 		Collection<Pair<V, V>> diff = new ArrayList<>(newMap.size());
 		for (K key : newMap.keySet())
@@ -250,52 +224,6 @@ public class Blamer {
 		for (K key : keys)
 			if (key != null)
 				map.put(key, value);
-	}
-
-	static class Match<V> extends Pair<V, V> {
-
-		static <V> Match<V> make(Label label, V oldV, V newV) {
-			return new Match<V>(label, oldV, newV);
-		}
-
-		static enum Label {
-			CREATED, DELETED, MODIFIED, UNCHANGED
-		}
-
-		public final Label label;
-
-		protected Match(Label label, V fst, V snd) {
-			super(fst, snd);
-			this.label = label;
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = super.hashCode();
-			result = prime * result + ((label == null) ? 0 : label.hashCode());
-			return result;
-		}
-
-		@Override
-		public String toString() {
-			return "Match [label=" + label + ", fst=" + fst + ", snd=" + snd + "]";
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (!super.equals(obj))
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			Match<?> other = (Match<?>) obj;
-			if (label != other.label)
-				return false;
-			return true;
-		}
-
 	}
 
 	static <K, V> void diff(Map<K, V> oldMap, Map<K, V> newMap, Differ<K, V> d) {
