@@ -62,4 +62,8 @@ public class HammockNode extends Node {
 		return getActual().getBlock();
 	}
 
+	@Override
+	public String toString() {
+		return (isHeader() ? "HEADER" : "EXIT") + "(" + super.toString() + ")";
+	}
 }

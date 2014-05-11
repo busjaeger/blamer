@@ -19,4 +19,8 @@ public class Edge {
 		return sink;
 	}
 
+	@Override
+	public String toString() {
+		return getSource() + ">" + getSink();
+	}
 }

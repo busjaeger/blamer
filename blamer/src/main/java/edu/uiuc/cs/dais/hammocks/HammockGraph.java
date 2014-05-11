@@ -35,6 +35,16 @@ import com.ibm.wala.util.graph.traverse.DFS;
  */
 public class HammockGraph extends AbstractGraph<Node> {
 
+	static interface EnhancedEdgeManager<T, E> extends EdgeManager<T> {
+		Set<E> getEdges();
+
+		Set<E> getInEdges(T node);
+
+		Set<E> getOutEdges(T node);
+
+		void addEdge(Edge edge);
+	}
+
 	private final ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg;
 	private final Map<ISSABasicBlock, Node> nodeMap;
 	private final Set<Node> nodes;
@@ -43,13 +53,15 @@ public class HammockGraph extends AbstractGraph<Node> {
 	private final Set<Edge> edges;
 	private final Map<HammockNode, Collection<HammockNode>> nestingMap;
 	private final int maxNestingDepth;
+	private final NodeManager<Node> nodeManager;
+	private final EnhancedEdgeManager<Node, Edge> edgeManager;
 
 	HammockGraph(ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg) {
 		this(cfg, Collections.<HammockNode, Collection<HammockNode>> emptyMap(), 0);
 	}
 
-	HammockGraph(ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg, Map<HammockNode, Collection<HammockNode>> nestingMap,
-			int maxNestingDepth) {
+	HammockGraph(ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg,
+			Map<HammockNode, Collection<HammockNode>> nestingMap, int maxNestingDepth) {
 		this.cfg = cfg;
 		this.outEdges = new HashSetMultiMap<>();
 		this.inEdges = new HashSetMultiMap<>();
@@ -58,35 +70,7 @@ public class HammockGraph extends AbstractGraph<Node> {
 		this.nodeMap = new HashMap<>();
 		this.nestingMap = nestingMap;
 		this.maxNestingDepth = maxNestingDepth;
-	}
-
-	public ControlFlowGraph<SSAInstruction, ISSABasicBlock> getCfg() {
-		return cfg;
-	}
-
-	public Map<HammockNode, Collection<HammockNode>> getNestingMap() {
-		return nestingMap;
-	}
-
-	public int getMaxNestingDepth() {
-		return maxNestingDepth;
-	}
-
-	public Node getNode(ISSABasicBlock block) {
-		return nodeMap.get(block);
-	}
-
-	public Node getEntryNode() {
-		return nodeMap.get(cfg.entry());
-	}
-
-	public Node getExitNode() {
-		return nodeMap.get(cfg.exit());
-	}
-
-	@Override
-	protected NodeManager<Node> getNodeManager() {
-		return new NodeManager<Node>() {
+		this.nodeManager = new NodeManager<Node>() {
 			@Override
 			public Iterator<Node> iterator() {
 				return nodes.iterator();
@@ -113,21 +97,7 @@ public class HammockGraph extends AbstractGraph<Node> {
 				return nodes.contains(n);
 			}
 		};
-	}
-
-	static interface EnhancedEdgeManager<T, E> extends EdgeManager<T> {
-		Set<E> getEdges();
-
-		Set<E> getInEdges(T node);
-
-		Set<E> getOutEdges(T node);
-
-		void addEdge(Edge edge);
-	}
-
-	@Override
-	protected EnhancedEdgeManager<Node, Edge> getEdgeManager() {
-		return new EnhancedEdgeManager<Node, Edge>() {
+		this.edgeManager = new EnhancedEdgeManager<Node, Edge>() {
 
 			@Override
 			public Iterator<Node> getPredNodes(Node n) {
@@ -207,8 +177,8 @@ public class HammockGraph extends AbstractGraph<Node> {
 				if (edges.add(edge)) {
 					nodes.add(edge.source);
 					nodes.add(edge.sink);
-					outEdges.get(edge.source).add(edge);
-					inEdges.get(edge.sink).add(edge);
+					outEdges.put(edge.source, edge);
+					inEdges.put(edge.sink, edge);
 				}
 			}
 
@@ -240,6 +210,40 @@ public class HammockGraph extends AbstractGraph<Node> {
 		};
 	}
 
+	public ControlFlowGraph<SSAInstruction, ISSABasicBlock> getCfg() {
+		return cfg;
+	}
+
+	public Map<HammockNode, Collection<HammockNode>> getNestingMap() {
+		return nestingMap;
+	}
+
+	public int getMaxNestingDepth() {
+		return maxNestingDepth;
+	}
+
+	public Node getNode(ISSABasicBlock block) {
+		return nodeMap.get(block);
+	}
+
+	public Node getEntryNode() {
+		return nodeMap.get(cfg.entry());
+	}
+
+	public Node getExitNode() {
+		return nodeMap.get(cfg.exit());
+	}
+
+	@Override
+	protected NodeManager<Node> getNodeManager() {
+		return nodeManager;
+	}
+
+	@Override
+	protected EnhancedEdgeManager<Node, Edge> getEdgeManager() {
+		return edgeManager;
+	}
+
 	public static HammockGraph load(CGNode cgNode) {
 		ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg = cgNode.getIR().getControlFlowGraph();
 		// prune exception edges for now
@@ -253,23 +257,25 @@ public class HammockGraph extends AbstractGraph<Node> {
 		MultiMap<Node, Edge> outEdgesMap = new HashSetMultiMap<>();
 
 		Dominators<Node> doms = Dominators.make(original, original.getEntryNode());
-		Dominators<Node> pDoms = Dominators.make(GraphInverter.invert(original), original.getNode(cfg.exit()));
+		Dominators<Node> pDoms = Dominators.make(GraphInverter.invert(original), original.getExitNode());
 
-		Collection<Node> hammockedDecisionNodes = new HashSet<>();
+		Collection<Node> enclosedDecNodesSet = new HashSet<>();
 		Map<HammockNode, Collection<HammockNode>> nestingMap = new HashMap<>();
 		AtomicInteger maxNestingDepth = new AtomicInteger(0);
 
-		SortedSet<Node> nodes = DFS.sortByDepthFirstOrder(original, original.getNode(cfg.entry()));
+		SortedSet<Node> nodes = DFS.sortByDepthFirstOrder(original, original.getEntryNode());
 		for (Node node : nodes) {
 			// not a decision node
 			if (original.getSuccNodeCount(node) <= 1)
 				continue;
 			// node already in hammock
-			if (hammockedDecisionNodes.contains(node))
+			if (enclosedDecNodesSet.contains(node))
 				continue;
 
+			Set<Node> visitedDecNodesSet = new HashSet<Node>();
+			Set<Node> uncollapsibleDecNodesSet = new HashSet<Node>();
 			collapseMinHammock(node, doms, pDoms, addedEdgesSet, notCopiedEdgesSet, inEdgesMap, outEdgesMap,
-					new HashSet<Node>(), hammockedDecisionNodes, new HashSet<Node>(), original, nestingMap,
+					visitedDecNodesSet, enclosedDecNodesSet, uncollapsibleDecNodesSet, original, nestingMap,
 					maxNestingDepth);
 		}
 
@@ -293,7 +299,7 @@ public class HammockGraph extends AbstractGraph<Node> {
 			Set<Edge> notCopiedEdgesSet, //
 			MultiMap<Node, Edge> inEdgesMap, //
 			MultiMap<Node, Edge> outEdgesMap, //
-			HashSet<Node> visitedDecNodesSet, //
+			Collection<Node> visitedDecNodesSet, //
 			Collection<Node> enclosedDecNodesSet, //
 			Collection<Node> uncollapsibleDecNodesSet, //
 			HammockGraph original, Map<HammockNode, Collection<HammockNode>> nestingMap,//

@@ -14,4 +14,9 @@ public class Node {
 		return block;
 	}
 
+	@Override
+	public String toString() {
+		return Integer.toString(getBlock().getNumber());
+	}
+
 }

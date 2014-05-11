@@ -1,4 +1,4 @@
-package edu.uiuc.cs.dais.blamer;
+package edu.uiuc.cs.dais.diff;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,18 +10,22 @@ import com.ibm.wala.util.collections.Pair;
 
 import edu.uiuc.cs.dais.hammocks.HammockGraph;
 
-class CGNodeDifferencer {
+public class CGNodeDifferencer {
 
-	static enum Label {
+	public static enum Label {
 		CREATED, DELETED, MODIFIED, UNCHANGED
 	}
 
-	static Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> difference(CGNode oldNode, CGNode newNode) {
+	public static Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> difference(CGNode oldNode, CGNode newNode) {
 		Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> matches = matchDirectly(oldNode, newNode);
-		if (matches != null)
+		if (matches != null && !oldNode.getMethod().getName().equals("binarySearch"))
 			return matches;
 		HammockGraph oldHammock = HammockGraph.load(oldNode);
 		HammockGraph newHammock = HammockGraph.load(newNode);
+
+		System.out.println(oldHammock);
+
+		newHammock.getCfg();
 
 		throw new UnsupportedOperationException("Not yet finished");
 	}
