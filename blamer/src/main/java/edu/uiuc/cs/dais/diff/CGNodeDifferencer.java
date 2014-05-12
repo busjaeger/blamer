@@ -2,6 +2,7 @@ package edu.uiuc.cs.dais.diff;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ssa.IR;
@@ -12,20 +13,18 @@ import edu.uiuc.cs.dais.hammocks.HammockGraph;
 
 public class CGNodeDifferencer {
 
-	public static enum Label {
-		CREATED, DELETED, MODIFIED, UNCHANGED
-	}
-
-	public static Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> difference(CGNode oldNode, CGNode newNode) {
+	public static Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> difference(CGNode oldNode,
+			CGNode newNode) {
 		Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> matches = matchDirectly(oldNode, newNode);
 		if (matches != null && !oldNode.getMethod().getName().equals("binarySearch"))
 			return matches;
 		HammockGraph oldHammock = HammockGraph.load(oldNode);
 		HammockGraph newHammock = HammockGraph.load(newNode);
 
-		System.out.println(oldHammock);
+		Map<String, NodePair> match = HammockDifferencer.compareHammocks(oldHammock.getEntryNode(),
+				newHammock.getEntryNode(), oldHammock, newHammock);
 
-		newHammock.getCfg();
+		System.out.println(match);
 
 		throw new UnsupportedOperationException("Not yet finished");
 	}

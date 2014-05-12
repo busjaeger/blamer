@@ -4,11 +4,13 @@ public class Edge {
 
 	final Node source;
 	final Node sink;
+	final String label;
 
-	public Edge(Node source, Node sink) {
+	public Edge(Node source, Node sink, String label) {
 		super();
 		this.source = source;
 		this.sink = sink;
+		this.label = label;
 	}
 
 	public Node getSource() {
@@ -19,8 +21,12 @@ public class Edge {
 		return sink;
 	}
 
+	public String getLabel() {
+		return label;
+	}
+
 	@Override
 	public String toString() {
-		return getSource() + ">" + getSink();
+		return getSource() + "-" + getLabel() + ">" + getSink();
 	}
 }

@@ -16,12 +16,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.ibm.wala.cfg.ControlFlowGraph;
 import com.ibm.wala.ipa.callgraph.CGNode;
 import com.ibm.wala.ipa.cfg.ExceptionPrunedCFG;
+import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
 import com.ibm.wala.ssa.SSAInstruction;
 import com.ibm.wala.util.collections.HashSetMultiMap;
 import com.ibm.wala.util.collections.MultiMap;
 import com.ibm.wala.util.graph.AbstractGraph;
-import com.ibm.wala.util.graph.EdgeManager;
 import com.ibm.wala.util.graph.NodeManager;
 import com.ibm.wala.util.graph.dominators.Dominators;
 import com.ibm.wala.util.graph.impl.GraphInverter;
@@ -34,16 +34,6 @@ import com.ibm.wala.util.graph.traverse.DFS;
  * @author bbusjaeger
  */
 public class HammockGraph extends AbstractGraph<Node> {
-
-	static interface EnhancedEdgeManager<T, E> extends EdgeManager<T> {
-		Set<E> getEdges();
-
-		Set<E> getInEdges(T node);
-
-		Set<E> getOutEdges(T node);
-
-		void addEdge(Edge edge);
-	}
 
 	private final ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg;
 	private final Map<ISSABasicBlock, Node> nodeMap;
@@ -152,12 +142,6 @@ public class HammockGraph extends AbstractGraph<Node> {
 			}
 
 			@Override
-			public void addEdge(Node src, Node dst) {
-				Edge edge = new Edge(src, dst);
-				addEdge(edge);
-			}
-
-			@Override
 			public Set<Edge> getEdges() {
 				return edges;
 			}
@@ -175,8 +159,8 @@ public class HammockGraph extends AbstractGraph<Node> {
 			@Override
 			public void addEdge(Edge edge) {
 				if (edges.add(edge)) {
-					nodes.add(edge.source);
-					nodes.add(edge.sink);
+					nodeManager.addNode(edge.source);
+					nodeManager.addNode(edge.sink);
 					outEdges.put(edge.source, edge);
 					inEdges.put(edge.sink, edge);
 				}
@@ -184,7 +168,12 @@ public class HammockGraph extends AbstractGraph<Node> {
 
 			@Override
 			public boolean hasEdge(Node src, Node dst) {
-				return edges.contains(new Edge(src, dst));
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public void addEdge(Node src, Node dst) {
+				throw new UnsupportedOperationException();
 			}
 
 			@Override
@@ -235,12 +224,12 @@ public class HammockGraph extends AbstractGraph<Node> {
 	}
 
 	@Override
-	protected NodeManager<Node> getNodeManager() {
+	public NodeManager<Node> getNodeManager() {
 		return nodeManager;
 	}
 
 	@Override
-	protected EnhancedEdgeManager<Node, Edge> getEdgeManager() {
+	public EnhancedEdgeManager<Node, Edge> getEdgeManager() {
 		return edgeManager;
 	}
 
@@ -248,7 +237,7 @@ public class HammockGraph extends AbstractGraph<Node> {
 		ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg = cgNode.getIR().getControlFlowGraph();
 		// prune exception edges for now
 		cfg = ExceptionPrunedCFG.make(cfg);
-		HammockGraph original = initHammock(cfg);
+		HammockGraph original = initHammock(cfg, cgNode.getIR());
 
 		Set<Edge> addedEdgesSet = new HashSet<>();
 		Set<Edge> notCopiedEdgesSet = new HashSet<>();
@@ -567,12 +556,13 @@ public class HammockGraph extends AbstractGraph<Node> {
 
 			if ((isHeader && !numUnvisitedInEdgesMap.containsKey(source))
 					|| (!isHeader && numUnvisitedInEdgesMap.containsKey(source))) {
-				simAddEdge(new Edge(inEdge.getSource(), hmNode), addedEdgesSet, inEdgesMap, outEdgesMap, original);
+				simAddEdge(new Edge(inEdge.getSource(), hmNode, inEdge.getLabel()), addedEdgesSet, inEdgesMap,
+						outEdgesMap, original);
 				simRemoveEdge(inEdge, addedEdgesSet, notCopiedEdgesSet, inEdgesMap, outEdgesMap, original);
 			}
 		}
 		// add edge from hammock node to actual node
-		simAddEdge(new Edge(hmNode, hmNode.getActual()), addedEdgesSet, inEdgesMap, outEdgesMap, original);
+		simAddEdge(new Edge(hmNode, hmNode.getActual(), null), addedEdgesSet, inEdgesMap, outEdgesMap, original);
 	}
 
 	/** simAddEdge (Edge e) and simRemoveEdge (Edge e) */
@@ -636,26 +626,31 @@ public class HammockGraph extends AbstractGraph<Node> {
 		}
 	}
 
-	private static HammockGraph initHammock(ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg) {
+	private static HammockGraph initHammock(ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg, IR ir) {
 		// compute initial unmodified hammock graph (mostly to make this similar to JDiff)
 		Map<ISSABasicBlock, Node> nodes = new HashMap<>(cfg.getNumberOfNodes());
 		HammockGraph h = new HammockGraph(cfg);
 		for (Iterator<ISSABasicBlock> it = cfg.iterator(); it.hasNext();) {
 			ISSABasicBlock block = it.next();
-			Node node = getOrCreate(nodes, block);
+			Node node = getOrCreate(nodes, cfg, ir, block);
 			h.addNode(node);
+
+			String label = cfg.getSuccNodeCount(block) > 1 ? "T" : null;
 			for (Iterator<ISSABasicBlock> succs = cfg.getSuccNodes(block); succs.hasNext();) {
-				Node succ = getOrCreate(nodes, succs.next());
-				h.addEdge(node, succ);
+				Node succ = getOrCreate(nodes, cfg, ir, succs.next());
+				h.getEdgeManager().addEdge(new Edge(node, succ, label));
+				if (label != null)
+					label = "F";
 			}
 		}
 		return h;
 	}
 
-	private static Node getOrCreate(Map<ISSABasicBlock, Node> nodes, ISSABasicBlock block) {
+	private static Node getOrCreate(Map<ISSABasicBlock, Node> nodes,
+			ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg, IR ir, ISSABasicBlock block) {
 		Node node = nodes.get(block);
 		if (node == null)
-			nodes.put(block, node = new Node(block));
+			nodes.put(block, node = new Node(cfg, ir, block));
 		return node;
 	}
 

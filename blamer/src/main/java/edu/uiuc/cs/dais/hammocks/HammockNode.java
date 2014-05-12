@@ -1,6 +1,9 @@
 package edu.uiuc.cs.dais.hammocks;
 
+import com.ibm.wala.cfg.ControlFlowGraph;
+import com.ibm.wala.ssa.IR;
 import com.ibm.wala.ssa.ISSABasicBlock;
+import com.ibm.wala.ssa.SSAInstruction;
 
 public class HammockNode extends Node {
 
@@ -23,7 +26,7 @@ public class HammockNode extends Node {
 	private HammockNode other;
 
 	public HammockNode(boolean header, Node actual, int nestingDepth) {
-		super(null);
+		super(null, null, null);
 		this.actual = actual;
 		this.header = header;
 		this.nestingDepth = nestingDepth;
@@ -60,6 +63,16 @@ public class HammockNode extends Node {
 	@Override
 	public ISSABasicBlock getBlock() {
 		return getActual().getBlock();
+	}
+
+	@Override
+	public ControlFlowGraph<SSAInstruction, ISSABasicBlock> getCfg() {
+		return getActual().getCfg();
+	}
+
+	@Override
+	public IR getIR() {
+		return getActual().getIR();
 	}
 
 	@Override

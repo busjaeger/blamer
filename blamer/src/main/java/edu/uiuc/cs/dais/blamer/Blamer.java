@@ -59,7 +59,7 @@ import com.ibm.wala.util.strings.ImmutableByteArray;
 import com.ibm.wala.util.strings.UTF8Convert;
 
 import edu.uiuc.cs.dais.diff.CGNodeDifferencer;
-import edu.uiuc.cs.dais.diff.CGNodeDifferencer.Label;
+import edu.uiuc.cs.dais.diff.Label;
 
 public class Blamer {
 
