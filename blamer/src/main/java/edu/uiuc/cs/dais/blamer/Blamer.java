@@ -98,7 +98,7 @@ public class Blamer {
 		final AnalysisOptions options0 = createAnalysisOptions(testClassName, testMethodName, scope0, cha0);
 		final CallGraphBuilder builder0 = createCallGraphBuilder(scope0, cha0, options0);
 		final CallGraph callGraph0 = makeCallGraph(builder0, options0).timed();
-		System.err.println();
+		System.err.println("Call graph size: " + callGraph0.getNumberOfNodes());
 
 		CallGraphBuilder prevBuilder = builder0;
 		CallGraph prevCallGraph = callGraph0;
@@ -115,7 +115,7 @@ public class Blamer {
 			final CallGraphBuilder builder = createCallGraphBuilder(scope, cha, options);
 			final CallGraph callGraph = makeCallGraph(builder, options).timed();
 
-			changes = callGraphDiff(prevCallGraph, callGraph, i, changes);
+			changes = makeDiff(prevCallGraph, callGraph, i, changes).timed();
 			prevScope = scope;
 			prevBuilder = builder;
 			prevCallGraph = callGraph;
@@ -374,6 +374,16 @@ public class Blamer {
 			@Override
 			public CallGraph call() throws Exception {
 				return builder.makeCallGraph(options, null);
+			}
+		};
+	}
+
+	static TimedCallable<Map<CGNode, MultiMap<SSAInstruction, Integer>>> makeDiff(final CallGraph prevCallGraph,
+			final CallGraph callGraph, final int i, final Map<CGNode, MultiMap<SSAInstruction, Integer>> changes) {
+		return new TimedCallable<Map<CGNode, MultiMap<SSAInstruction, Integer>>>("Diff") {
+			@Override
+			public Map<CGNode, MultiMap<SSAInstruction, Integer>> call() throws Exception {
+				return callGraphDiff(prevCallGraph, callGraph, i, changes);
 			}
 		};
 	}
