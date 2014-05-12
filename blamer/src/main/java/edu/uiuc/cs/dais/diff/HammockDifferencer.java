@@ -65,11 +65,11 @@ public class HammockDifferencer {
 			Node currentNew = currentNP.getNewNode();
 
 			// check if already matched
-			if ((localNodePairMap.get(DiffUtil.getKey(currentOld)) != null)
-					|| (localNodePairMap.get(DiffUtil.getKey(currentNew)) != null)) {
-				if ((localNodePairMap.get(DiffUtil.getKey(currentOld)) != null)
-						&& (localNodePairMap.get(DiffUtil.getKey(currentNew)) != null)
-						&& (!localNodePairMap.get(DiffUtil.getKey(currentOld)).getNewNode().equals(currentNew))) {
+			if ((localNodePairMap.get(DiffUtil.getOldKey(currentOld)) != null)
+					|| (localNodePairMap.get(DiffUtil.getNewKey(currentNew)) != null)) {
+				if ((localNodePairMap.get(DiffUtil.getOldKey(currentOld)) != null)
+						&& (localNodePairMap.get(DiffUtil.getNewKey(currentNew)) != null)
+						&& (!localNodePairMap.get(DiffUtil.getOldKey(currentOld)).getNewNode().equals(currentNew))) {
 					currentPS.getPredPair().setLabel(Label.MODIFIED);
 				}
 				continue;
@@ -93,9 +93,9 @@ public class HammockDifferencer {
 				newVisitedNodeKeys.addAll(localNodePairMap.keySet());
 				// oldDescs and newDescs are the descendants of currentOld and currentNew
 				Collection<Node> oldDescs = getDescendants(Collections.singleton(currentOld), oldHGraph, currentNew,
-						newHGraph, oldVisitedNodeKeys, oldExitNode);
+						newHGraph, oldVisitedNodeKeys, oldExitNode, true);
 				Collection<Node> newDescs = getDescendants(Collections.singleton(currentNew), newHGraph, currentOld,
-						oldHGraph, newVisitedNodeKeys, newExitNode);
+						oldHGraph, newVisitedNodeKeys, newExitNode, false);
 
 				lookahead: while (!oldDescs.isEmpty() && !newDescs.isEmpty()) {
 					// lhNPs - look ahead Node Pairs combines the look-ahead on both old and new sides.
@@ -116,9 +116,9 @@ public class HammockDifferencer {
 					// Successors of old/new nodes with the same mulitplicity of no. of outgoing edges and - same type
 					// if predecessors are hammock start node.
 					oldDescs = getDescendants(oldDescs, oldHGraph, currentNew, newHGraph, oldVisitedNodeKeys,
-							oldExitNode);
+							oldExitNode, true);
 					newDescs = getDescendants(newDescs, newHGraph, currentOld, oldHGraph, newVisitedNodeKeys,
-							newExitNode);
+							newExitNode, false);
 				}
 			}
 			// check if any perfect matched pair is found
@@ -193,29 +193,29 @@ public class HammockDifferencer {
 	// If ref node is a hammock entry node, this will look only after its hammock exit
 	// predGraph must contain all nodes in preds and refGraph must contain refNode
 	private static Collection<Node> getDescendants(Collection<Node> preds, HammockGraph predGraph, Node refNode,
-			HammockGraph refGraph, Collection<String> visitedNodeKeys, Node exitNode) {
+			HammockGraph refGraph, Collection<String> visitedNodeKeys, Node exitNode, boolean old) {
 		Collection<Node> descs = new Vector<>();
 
 		// iterate through each predecessor
 		for (Node pred : preds) {
 			// stop if already visited
-			assert (visitedNodeKeys.contains(DiffUtil.getKey(exitNode)));
-			if (visitedNodeKeys.contains(DiffUtil.getKey(pred))) {
+			assert (visitedNodeKeys.contains(old ? DiffUtil.getOldKey(exitNode): DiffUtil.getNewKey(exitNode)));
+			if (visitedNodeKeys.contains(old ? DiffUtil.getOldKey(pred) : DiffUtil.getNewKey(pred))) {
 				continue;
 			}
 
-			visitedNodeKeys.add(DiffUtil.getKey(pred));
+			visitedNodeKeys.add(old ? DiffUtil.getOldKey(pred) : DiffUtil.getNewKey(pred));
 			// if pred is a node of type other than hammock node, get its descendants normally
 			// if pred is a hammock entry, only look at after its hammock exit
 
 			if ((pred instanceof HammockNode) && (((HammockNode) pred).isHeader())) {
 				Node hammockExit = ((HammockNode) pred).getOther();
 				descs.addAll(getDescendants(Collections.singleton(hammockExit), predGraph, refNode, refGraph,
-						visitedNodeKeys, exitNode));
+						visitedNodeKeys, exitNode, old));
 			} else {
 				for (Edge outEdge : predGraph.getEdgeManager().getOutEdges(pred)) {
 					Node currentDesc = outEdge.getSink();
-					if (visitedNodeKeys.contains(DiffUtil.getKey(currentDesc))) {
+					if (visitedNodeKeys.contains(old ? DiffUtil.getOldKey(currentDesc) : DiffUtil.getNewKey(currentDesc))) {
 						continue;
 					}
 					descs.add(currentDesc);

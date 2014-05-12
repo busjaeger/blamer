@@ -2,6 +2,7 @@ package edu.uiuc.cs.dais.diff;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import com.ibm.wala.ipa.callgraph.CGNode;
@@ -21,12 +22,11 @@ public class CGNodeDifferencer {
 		HammockGraph oldHammock = HammockGraph.load(oldNode);
 		HammockGraph newHammock = HammockGraph.load(newNode);
 
+		// TODO actual transform match into changed statements (doesn't impact perf eval, so do later)
 		Map<String, NodePair> match = HammockDifferencer.compareHammocks(oldHammock.getEntryNode(),
 				newHammock.getEntryNode(), oldHammock, newHammock);
 
-		System.out.println(match);
-
-		throw new UnsupportedOperationException("Not yet finished");
+		return Collections.emptyList();
 	}
 
 	// technically we should consider sub-typing here
