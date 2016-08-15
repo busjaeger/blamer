@@ -237,6 +237,8 @@ public class HammockGraph extends AbstractGraph<Node> {
 		ControlFlowGraph<SSAInstruction, ISSABasicBlock> cfg = cgNode.getIR().getControlFlowGraph();
 		// prune exception edges for now
 		cfg = ExceptionPrunedCFG.make(cfg);
+		if (cfg.getNumberOfNodes() == 0)
+			return null;
 		HammockGraph original = initHammock(cfg, cgNode.getIR());
 
 		Set<Edge> addedEdgesSet = new HashSet<>();

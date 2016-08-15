@@ -17,15 +17,18 @@ public class CGNodeDifferencer {
 	public static Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> difference(CGNode oldNode,
 			CGNode newNode) {
 		Collection<Pair<Label, Pair<SSAInstruction, SSAInstruction>>> matches = matchDirectly(oldNode, newNode);
-		if (matches != null && !oldNode.getMethod().getName().equals("binarySearch"))
+		if (matches != null)
 			return matches;
 		HammockGraph oldHammock = HammockGraph.load(oldNode);
 		HammockGraph newHammock = HammockGraph.load(newNode);
 
 		// TODO actual transform match into changed statements (doesn't impact perf eval, so do later)
+		if (oldHammock != null && newHammock != null) {
 		Map<String, NodePair> match = HammockDifferencer.compareHammocks(oldHammock.getEntryNode(),
 				newHammock.getEntryNode(), oldHammock, newHammock);
 
+		match.size();
+		}
 		return Collections.emptyList();
 	}
 
